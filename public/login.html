@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Access | TVET Manager Pro</title>
+    <!-- Fonts: Inter for clean, modern readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 1. Modern Variables & Theming --- */
+        :root {
+            /* Palette */
+            --primary: #4f46e5; 
+            --primary-dark: #4338ca; 
+            --primary-glow: rgba(79, 70, 229, 0.25);
+            
+            /* Light Mode */
+            --bg-body: #f8fafc;
+            /* Modern Spotlight Background Effect */
+            --bg-spotlight: radial-gradient(circle at 50% 0%, #e0e7ff 0%, transparent 50%);
+            
+            --bg-card: rgba(255, 255, 255, 0.85); /* Glassy white */
+            --bg-input: rgba(255, 255, 255, 0.6);
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            
+            --border: rgba(226, 232, 240, 0.8);
+            --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+            --shadow-glow: 0 10px 30px -10px var(--primary-glow);
+            
+            --error: #ef4444; 
+            --success: #10b981; 
+            --radius: 1.25rem;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-body: #0f172a;
+            --bg-spotlight: radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%);
+            
+            --bg-card: rgba(30, 41, 59, 0.7); /* Glassy dark */
+            --bg-input: rgba(15, 23, 42, 0.6);
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow-soft: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- 2. Base Reset & Typography --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background: var(--bg-body), var(--bg-spotlight); 
+            background-blend-mode: normal;
+            color: var(--text-main); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: background 0.4s ease, color 0.4s ease;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* --- 3. Layout & Card --- */
+        .auth-container { width: 100%; max-width: 440px; padding: 1.5rem; position: relative; z-index: 1; }
+        
+        .auth-card { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); /* Glassmorphism */
+            padding: 3rem 2.5rem; 
+            border-radius: var(--radius); 
+            box-shadow: var(--shadow-soft); 
+            border: 1px solid var(--border); 
+            text-align: center; 
+            position: relative; 
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .auth-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+
+        /* Logo Area */
+        .auth-card > div:first-child i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 6px rgba(79, 70, 229, 0.2));
+        }
+
+        /* --- 4. Toggle Switch --- */
+        .auth-toggle { 
+            display: flex; background: var(--bg-input); 
+            border-radius: 50px; padding: 5px; margin-bottom: 2.5rem; 
+            position: relative; border: 1px solid var(--border);
+        }
+        
+        .toggle-btn { 
+            flex: 1; padding: 0.8rem; border: none; background: transparent; 
+            color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: pointer; 
+            z-index: 1; transition: color 0.3s; position: relative;
+        }
+        
+        .toggle-btn.active { color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        
+        .toggle-slider { 
+            position: absolute; top: 5px; left: 5px; height: calc(100% - 10px); width: calc(50% - 5px); 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            border-radius: 50px; 
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); 
+            z-index: 0;
+        }
+
+        /* --- 5. Forms & Inputs --- */
+        .form-group { margin-bottom: 1.4rem; text-align: left; position: relative; }
+        
+        .input-wrapper { position: relative; }
+        
+        .input-icon { 
+            position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); 
+            color: var(--text-muted); pointer-events: none; z-index: 1; transition: color 0.3s; 
+        }
+        
+        .form-input { 
+            width: 100%; padding: 0.9rem 1rem 0.9rem 2.8rem; 
+            border: 1px solid var(--border); border-radius: 0.75rem; 
+            background: var(--bg-card); color: var(--text-main); font-size: 0.95rem; 
+            transition: all 0.3s ease; 
+        }
+        
+        .form-input:focus { 
+            border-color: var(--primary); outline: none; 
+            background: var(--bg-card);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); 
+        }
+
+        .input-wrapper:hover .input-icon { color: var(--text-main); }
+
+        .toggle-password { 
+            position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); 
+            background: none; border: none; color: var(--text-muted); cursor: pointer; 
+            transition: color 0.2s;
+        }
+        .toggle-password:hover { color: var(--primary); }
+
+        /* --- 6. Buttons --- */
+        .btn { 
+            width: 100%; padding: 0.95rem; border: none; border-radius: 0.75rem; 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            color: white; font-weight: 600; cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; 
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+        
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3); 
+            filter: brightness(1.1);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* --- 7. Links --- */
+        div[style*="text-align: right"] a {
+            color: var(--primary); 
+            font-size: 0.9rem; 
+            text-decoration: none; 
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        div[style*="text-align: right"] a:hover { text-decoration: underline; color: var(--primary-dark); }
+
+        /* --- 8. Toasts --- */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        
+        .toast { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(10px);
+            border-left: 4px solid var(--primary); 
+            padding: 1rem; border-radius: 0.5rem; 
+            box-shadow: var(--shadow-soft); 
+            display: flex; align-items: center; gap: 10px; 
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            min-width: 300px; 
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--error); }
+        
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- 9. Utilities --- */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Theme Toggle Button */
+        .theme-toggle { 
+            position: fixed; top: 20px; right: 20px; 
+            background: var(--bg-card); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); width: 44px; height: 44px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; color: var(--text-main); z-index: 100; transition: 0.3s; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .theme-toggle:hover { transform: rotate(15deg) scale(1.05); border-color: var(--primary); color: var(--primary); }
+        
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <div style="margin-bottom: 2rem;">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            
+            <div class="auth-toggle">
+                <div class="toggle-slider" id="slider"></div>
+                <button type="button" class="toggle-btn active" onclick="switchMode('login')">Sign In</button>
+                <button type="button" class="toggle-btn" onclick="switchMode('signup')">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="fade-in" autocomplete="on">
+                <div class="form-group">
+                    <label for="loginEmail" class="sr-only">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="loginEmail" class="form-input" placeholder="Email Address" autocomplete="email" required>
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="loginPass" class="sr-only">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="loginPass" class="form-input" placeholder="Password" autocomplete="current-password" required>
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPass', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div style="text-align: right; margin-bottom: 1.8rem;">
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">
+                    Sign In Securely <i class="fa-solid fa-arrow-right" style="font-size: 0.8em"></i>
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="hidden fade-in">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="text" class="form-input" placeholder="Full Name" required>
+                        <i class="fa-solid fa-user input-icon"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="email" class="form-input" placeholder="Email Address" required>
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" class="form-input" placeholder="Create Password" required>
+                        <i class="fa-solid fa-lock input-icon"></i>
+                    </div>
+                </div>
+                <button type="submit" class="btn">
+                    Create Account <i class="fa-solid fa-user-plus" style="font-size: 0.8em"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- External Auth Script -->
+    <script src="auth.js"></script>
+</body>
+</html>

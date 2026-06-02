@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "tvet-manager-pro",
+  "builds": [
+    {
+      "src": "./server.js",
+      "use": "@vercel/node"
+    }
+  ]
+}
