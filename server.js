@@ -1,43 +1,96 @@
-    // ... imports ...
-    // ... database logic ...
-    
-    // --- MODIFIED FUNCTION FOR VERCEL PERSISTENCE ---
-    async function loadDB() {
-        try {
-            // 1. Try to read from Vercel persistent storage
-            const path = path.join(__dirname, 'vercel.json');
-            
-            // Check if file exists to avoid "file not found" errors
-            if (fs.existsSync(path)) {
-                const data = fs.readFileSync(path, 'utf8');
-                return JSON.parse(data);
-            } else {
-                // 2. If no file found, Initialize with default data
-                const defaultPassword = 'admin123'; 
-                const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-                const initialData = { 
-                    students: [], exams: [], finance: [], staff: [], inventory: [], 
-                    trades: [], settings: { schoolName: "TVET Institute" },
-                    users: [{ email: 'admin@tvet.ac.ke', passwordHash: hashedPassword, role: 'admin' }]
-                };
-                // Save the initial DB
-                fs.writeFileSync(path, JSON.stringify(initialData), 'utf8');
-                return initialData;
-            }
-        } catch (err) {
-            // Handle corrupted JSON or other errors
-            console.error("Error loading DB, initializing defaults:", err);
-            const initialData = { students: [], exams: [], finance: [], staff: [], inventory: [], settings: {} };
-            return initialData;
-        }
-    }
+const express = require("express");
+const { Pool } = require("pg");
+const bcrypt = require("bcrypt"); // Needed for password hashing
 
-    async function saveDB(data) {
-        const path = path.join(__dirname, 'vercel.json');
-        try {
-            // Write to Vercel persistent storage
-            fs.writeFileSync(path, JSON.stringify(data, null, 2), 'utf8');
-        } catch (err) {
-            console.error("Error saving DB:", err);
-        }
+const app = express();
+app.use(express.json());
+
+// Use DATABASE_URL (standard for Neon + Vercel)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Neon requires SSL
+});
+
+// --- Initialize DB ---
+async function initDB() {
+  try {
+    // 1. Create the users table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        passwordHash TEXT,
+        role VARCHAR(50)
+      )
+    `);
+
+    // 2. Ensure default admin exists
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      ["admin@tvet.ac.ke"]
+    );
+
+    if (result.rows.length === 0) {
+      const defaultPassword = "admin123";
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+      await pool.query(
+        "INSERT INTO users (email, passwordHash, role) VALUES ($1, $2, $3)",
+        ["admin@tvet.ac.ke", hashedPassword, "admin"]
+      );
+      console.log("✅ Default admin user created.");
     }
+  } catch (err) {
+    console.error("❌ Error initializing DB:", err);
+  }
+}
+
+// --- Load users ---
+async function loadDB() {
+  try {
+    const result = await pool.query("SELECT * FROM users");
+    return result.rows;
+  } catch (err) {
+    console.error("❌ Error loading DB:", err);
+    return [];
+  }
+}
+
+// --- Save user ---
+async function saveUser(email, passwordHash, role) {
+  try {
+    const check = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+
+    if (check.rows.length > 0) {
+      // Update existing user
+      await pool.query(
+        "UPDATE users SET passwordHash = $1, role = $2 WHERE email = $3",
+        [passwordHash, role, email]
+      );
+    } else {
+      // Insert new user
+      await pool.query(
+        "INSERT INTO users (email, passwordHash, role) VALUES ($1, $2, $3)",
+        [email, passwordHash, role]
+      );
+    }
+  } catch (err) {
+    console.error("❌ Error saving user:", err);
+  }
+}
+
+// --- Example routes ---
+app.get("/", (req, res) => {
+  res.send("Hello from Express + Neon on Vercel!");
+});
+
+app.get("/users", async (req, res) => {
+  const users = await loadDB();
+  res.json(users);
+});
+
+// Export app for Vercel (no app.listen!)
+module.exports = app;
+
+// Run DB init once on startup
+initDB();
